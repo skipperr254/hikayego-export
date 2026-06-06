@@ -1,0 +1,20 @@
+{
+  "short_name": "HikayeGO",
+  "name": "HikayeGO - İngilizce Öğrenmenin En Keyifli Yolu",
+  "icons": [
+    {
+      "src": "https://horizons-cdn.hostinger.com/47ed419b-a823-468d-9e6e-80c8442792f0/0b9a5181abbc4acf8a1bb151b23ddd54.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://horizons-cdn.hostinger.com/47ed419b-a823-468d-9e6e-80c8442792f0/0b9a5181abbc4acf8a1bb151b23ddd54.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#2563eb",
+  "background_color": "#ffffff"
+}

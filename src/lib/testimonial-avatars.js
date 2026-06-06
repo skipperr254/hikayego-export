@@ -1,0 +1,17 @@
+export const testimonialAvatars = [
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=StudentOne&backgroundColor=b6e3f4',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=StudentTwo&backgroundColor=f4b6e3',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=LearnerA&backgroundColor=b6f4c3',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=LearnerB&backgroundColor=f4e3b6',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=ScholarX&backgroundColor=f4c3b6',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=ScholarY&backgroundColor=d0b6f4',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=MentorFox&backgroundColor=c2d1e5',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=GuideCat&backgroundColor=e5c2d1',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=Prodigy101&backgroundColor=d1e5c2',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=Prodigy202&backgroundColor=e5d1c2',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=TopStudent&backgroundColor=c2e5e1',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=GoGetter&backgroundColor=e1c2e5',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=Achiever&backgroundColor=f0f4b6',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=RisingStar&backgroundColor=b6f4f0',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=BrightMind&backgroundColor=f4b6f0',
+];
