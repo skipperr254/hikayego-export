@@ -8,7 +8,9 @@ import { Loader2 } from "lucide-react";
 import { supabase } from "@/lib/customSupabaseClient";
 import { useNavigate } from "react-router-dom";
 
-const IyzicoForm = () => {
+const SUPABASE_URL = "https://vjxkmufoztgzrnwaxswo.supabase.co";
+
+const IyzicoForm = ({ selectedPackage, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -30,7 +32,6 @@ const IyzicoForm = () => {
     if (user) {
       const [firstName, ...lastNameParts] = (user.name || "").split(" ");
       const lastName = lastNameParts.join(" ");
-
       setFormData((prev) => ({
         ...prev,
         name: firstName || "",
@@ -82,9 +83,7 @@ const IyzicoForm = () => {
   const handleInputChange = (e) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
-    if (errors[id]) {
-      validateField(id, value);
-    }
+    if (errors[id]) validateField(id, value);
   };
 
   const handleBlur = (e) => {
@@ -96,39 +95,28 @@ const IyzicoForm = () => {
     let isValid = true;
     const newErrors = {};
     for (const key in formData) {
-      if (key === "zipCode") continue; // zipCode is optional
+      if (key === "zipCode") continue;
       if (!validateField(key, formData[key])) {
         isValid = false;
-        if (!errors[key]) {
-          newErrors[key] = `${fieldLabels[key]} alanı zorunludur.`;
-        }
+        if (!errors[key]) newErrors[key] = `${fieldLabels[key]} alanı zorunludur.`;
       }
     }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors((prev) => ({ ...prev, ...newErrors }));
-    }
+    if (Object.keys(newErrors).length > 0) setErrors((prev) => ({ ...prev, ...newErrors }));
     return isValid;
   };
 
   const getSimplifiedErrorMessage = (error) => {
     const message = error.message || "";
-    if (
-      message.includes("signature does not match") ||
-      message.toLowerCase().includes("imza hatası")
-    ) {
+    if (message.includes("signature does not match") || message.toLowerCase().includes("imza hatası")) {
       return "Ödeme başlatılamadı (imza hatası). Lütfen daha sonra tekrar deneyin.";
     }
-    if (
-      message.includes("11") ||
-      message.toLowerCase().includes("geçersiz istek")
-    ) {
+    if (message.includes("11") || message.toLowerCase().includes("geçersiz istek")) {
       return "Geçersiz bir istek gönderildi. Lütfen girdiğiniz bilgileri kontrol edip tekrar deneyin.";
     }
     if (message.includes("Failed to fetch")) {
       return "Ödeme servisine ulaşılamadı. Lütfen internet bağlantınızı kontrol edin.";
     }
-    return `Abonelik başlatılamadı. Hata: ${message}`;
+    return `Ödeme başlatılamadı. Hata: ${message}`;
   };
 
   const handleSubscribe = async (e) => {
@@ -142,25 +130,29 @@ const IyzicoForm = () => {
       return;
     }
 
+    if (!selectedPackage) {
+      toast({ variant: "destructive", title: "Lütfen bir paket seçin." });
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Authentication session not found.");
 
-      const response = await fetch(
-        "https://vjxkmufoztgzrnwaxswo.supabase.co/functions/v1/iyzico-initialize-payment",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify(formData),
-        }
-      );
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/iyzico-payment-start`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          packageType: selectedPackage.id,
+          frontendUrl: window.location.origin,
+          ...formData,
+        }),
+      });
 
       const result = await response.json();
 
@@ -175,12 +167,10 @@ const IyzicoForm = () => {
       } else if (result.paymentPageUrl) {
         window.location.href = result.paymentPageUrl;
       } else {
-        throw new Error(
-          "Iyzico'dan geçersiz yanıt alındı veya form içeriği boş."
-        );
+        throw new Error("Iyzico'dan geçersiz yanıt alındı veya form içeriği boş.");
       }
     } catch (error) {
-      console.error("Subscription initialization failed:", error);
+      console.error("Payment initialization failed:", error);
       toast({
         variant: "destructive",
         title: "Bir hata oluştu!",
@@ -192,163 +182,73 @@ const IyzicoForm = () => {
 
   return (
     <>
-      <form
-        onSubmit={handleSubscribe}
-        noValidate
-        className='space-y-4 max-h-[70vh] overflow-y-auto p-1 pr-4'
-      >
-        <div className='grid grid-cols-2 gap-4'>
-          <div className='space-y-1'>
-            <Label htmlFor='name'>Ad</Label>
-            <Input
-              id='name'
-              value={formData.name}
-              onBlur={handleBlur}
-              onChange={handleInputChange}
-              placeholder='Adınız'
-              required
-            />
-            {errors.name && (
-              <p className='text-red-500 text-xs mt-1'>{errors.name}</p>
-            )}
+      <form onSubmit={handleSubscribe} noValidate className="space-y-4 max-h-[70vh] overflow-y-auto p-1 pr-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <Label htmlFor="name">Ad</Label>
+            <Input id="name" value={formData.name} onBlur={handleBlur} onChange={handleInputChange} placeholder="Adınız" required />
+            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
           </div>
-          <div className='space-y-1'>
-            <Label htmlFor='surname'>Soyad</Label>
-            <Input
-              id='surname'
-              value={formData.surname}
-              onBlur={handleBlur}
-              onChange={handleInputChange}
-              placeholder='Soyadınız'
-              required
-            />
-            {errors.surname && (
-              <p className='text-red-500 text-xs mt-1'>{errors.surname}</p>
-            )}
+          <div className="space-y-1">
+            <Label htmlFor="surname">Soyad</Label>
+            <Input id="surname" value={formData.surname} onBlur={handleBlur} onChange={handleInputChange} placeholder="Soyadınız" required />
+            {errors.surname && <p className="text-red-500 text-xs mt-1">{errors.surname}</p>}
           </div>
         </div>
-        <div className='space-y-1'>
-          <Label htmlFor='email'>E-posta</Label>
-          <Input
-            id='email'
-            type='email'
-            value={formData.email}
-            onBlur={handleBlur}
-            onChange={handleInputChange}
-            placeholder='E-posta adresiniz'
-            required
-          />
-          {errors.email && (
-            <p className='text-red-500 text-xs mt-1'>{errors.email}</p>
-          )}
+        <div className="space-y-1">
+          <Label htmlFor="email">E-posta</Label>
+          <Input id="email" type="email" value={formData.email} onBlur={handleBlur} onChange={handleInputChange} placeholder="E-posta adresiniz" required />
+          {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
         </div>
-        <div className='space-y-1'>
-          <Label htmlFor='identityNumber'>TC Kimlik Numarası</Label>
-          <Input
-            id='identityNumber'
-            value={formData.identityNumber}
-            onBlur={handleBlur}
-            onChange={handleInputChange}
-            placeholder='11 haneli TC kimlik no'
-            required
-            maxLength='11'
-          />
-          {errors.identityNumber && (
-            <p className='text-red-500 text-xs mt-1'>{errors.identityNumber}</p>
-          )}
+        <div className="space-y-1">
+          <Label htmlFor="identityNumber">TC Kimlik Numarası</Label>
+          <Input id="identityNumber" value={formData.identityNumber} onBlur={handleBlur} onChange={handleInputChange} placeholder="11 haneli TC kimlik no" required maxLength="11" />
+          {errors.identityNumber && <p className="text-red-500 text-xs mt-1">{errors.identityNumber}</p>}
         </div>
-        <div className='space-y-1'>
-          <Label htmlFor='gsmNumber'>Telefon Numarası</Label>
-          <Input
-            id='gsmNumber'
-            type='tel'
-            value={formData.gsmNumber}
-            onBlur={handleBlur}
-            onChange={handleInputChange}
-            placeholder='+905xxxxxxxxx'
-            required
-          />
-          {errors.gsmNumber && (
-            <p className='text-red-500 text-xs mt-1'>{errors.gsmNumber}</p>
-          )}
+        <div className="space-y-1">
+          <Label htmlFor="gsmNumber">Telefon Numarası</Label>
+          <Input id="gsmNumber" type="tel" value={formData.gsmNumber} onBlur={handleBlur} onChange={handleInputChange} placeholder="+905xxxxxxxxx" required />
+          {errors.gsmNumber && <p className="text-red-500 text-xs mt-1">{errors.gsmNumber}</p>}
         </div>
-        <div className='space-y-1'>
-          <Label htmlFor='address'>Adres</Label>
-          <Input
-            id='address'
-            value={formData.address}
-            onBlur={handleBlur}
-            onChange={handleInputChange}
-            placeholder='Açık adresiniz'
-            required
-          />
-          {errors.address && (
-            <p className='text-red-500 text-xs mt-1'>{errors.address}</p>
-          )}
+        <div className="space-y-1">
+          <Label htmlFor="address">Adres</Label>
+          <Input id="address" value={formData.address} onBlur={handleBlur} onChange={handleInputChange} placeholder="Açık adresiniz" required />
+          {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
         </div>
-        <div className='grid grid-cols-2 gap-4'>
-          <div className='space-y-1'>
-            <Label htmlFor='city'>Şehir</Label>
-            <Input
-              id='city'
-              value={formData.city}
-              onBlur={handleBlur}
-              onChange={handleInputChange}
-              placeholder='Şehir'
-              required
-            />
-            {errors.city && (
-              <p className='text-red-500 text-xs mt-1'>{errors.city}</p>
-            )}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <Label htmlFor="city">Şehir</Label>
+            <Input id="city" value={formData.city} onBlur={handleBlur} onChange={handleInputChange} placeholder="Şehir" required />
+            {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city}</p>}
           </div>
-          <div className='space-y-1'>
-            <Label htmlFor='zipCode'>Posta Kodu</Label>
-            <Input
-              id='zipCode'
-              value={formData.zipCode}
-              onChange={handleInputChange}
-              placeholder='Posta kodu (isteğe bağlı)'
-            />
+          <div className="space-y-1">
+            <Label htmlFor="zipCode">Posta Kodu</Label>
+            <Input id="zipCode" value={formData.zipCode} onChange={handleInputChange} placeholder="Posta kodu (isteğe bağlı)" />
           </div>
         </div>
-        <div className='space-y-1'>
-          <Label htmlFor='country'>Ülke</Label>
-          <Input
-            id='country'
-            value={formData.country}
-            onChange={handleInputChange}
-            required
-            disabled
-            className='bg-muted/50'
-          />
-          {errors.country && (
-            <p className='text-red-500 text-xs mt-1'>{errors.country}</p>
-          )}
+        <div className="space-y-1">
+          <Label htmlFor="country">Ülke</Label>
+          <Input id="country" value={formData.country} onChange={handleInputChange} required disabled className="bg-muted/50" />
+          {errors.country && <p className="text-red-500 text-xs mt-1">{errors.country}</p>}
         </div>
 
-        <div className='pt-4'>
-          <Button
-            type='submit'
-            disabled={loading}
-            className='w-full text-lg cta-glow-button py-6'
-            size='lg'
-          >
+        <div className="pt-4">
+          <Button type="submit" disabled={loading} className="w-full text-lg cta-glow-button py-6" size="lg">
             {loading ? (
-              <div className='flex items-center justify-center'>
-                <Loader2 className='h-5 w-5 animate-spin mr-2' />
+              <div className="flex items-center justify-center">
+                <Loader2 className="h-5 w-5 animate-spin mr-2" />
                 <span>Yönlendiriliyor...</span>
               </div>
             ) : (
-              "Ödemeye Devam Et"
+              `Ödemeye Devam Et${selectedPackage ? ` — ${selectedPackage.price}` : ''}`
             )}
           </Button>
         </div>
-        <p className='text-xs text-muted-foreground text-center pt-2'>
-          Devam ettiğinizde Iyzico'nun güvenli ödeme sayfasına
-          yönlendirileceksiniz.
+        <p className="text-xs text-muted-foreground text-center pt-2">
+          Devam ettiğinizde Iyzico'nun güvenli ödeme sayfasına yönlendirileceksiniz.
         </p>
       </form>
-      <div id='iyzico-form-container' className='hidden'></div>
+      <div id="iyzico-form-container" className="hidden"></div>
     </>
   );
 };

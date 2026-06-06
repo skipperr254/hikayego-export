@@ -55,6 +55,7 @@ export const AuthProvider = ({ children }) => {
             .from('profiles')
             .update({
               subscription: false,
+              subscription_status: 'inactive',
               cancellation_date: now.toISOString(),
               updated_at: now.toISOString()
             })
