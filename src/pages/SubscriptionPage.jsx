@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Shield, Star, Languages, Volume2, Bookmark, Bot, Sparkles, BarChart, LifeBuoy, Info, Loader2, BookOpenCheck, ListPlus, Video, Check, Zap } from 'lucide-react';
+import { Shield, Star, Languages, Volume2, Bookmark, Bot, Sparkles, BarChart, LifeBuoy, Info, Loader2, BookOpenCheck, ListPlus, Video, Check, Zap, CalendarCheck } from 'lucide-react';
 import AnimatedBackground from '@/components/subscription/AnimatedBackground';
 import Seo from '@/components/Seo';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import TrustBadges from '@/components/subscription/TrustBadges';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
@@ -13,12 +12,22 @@ import IyzicoForm from '@/components/subscription/IyzicoForm';
 
 const PACKAGES = [
   {
+    id: '1_month',
+    months: 1,
+    label: '1 Aylık',
+    price: '₺149',
+    perMonth: '₺149/ay',
+    badge: null,
+    description: 'Esnek, taahhütsüz',
+  },
+  {
     id: '3_months',
     months: 3,
     label: '3 Aylık',
     price: '₺249',
     perMonth: '₺83/ay',
     badge: null,
+    savings: '%44 tasarruf',
     description: 'Başlangıç için ideal',
   },
   {
@@ -28,7 +37,7 @@ const PACKAGES = [
     price: '₺399',
     perMonth: '₺66/ay',
     badge: 'En Popüler',
-    savings: '%20 tasarruf',
+    savings: '%56 tasarruf',
     description: 'Çoğunlukla tercih edilen',
   },
   {
@@ -38,22 +47,17 @@ const PACKAGES = [
     price: '₺699',
     perMonth: '₺58/ay',
     badge: 'En Avantajlı',
-    savings: '%30 tasarruf',
+    savings: '%61 tasarruf',
     description: 'Tam yıl boyunca öğren',
   },
 ];
 
 const SubscriptionPage = () => {
-  const { canAccessPremiumFeatures, loading: authLoading } = useAuth();
-  const navigate = useNavigate();
+  const { canAccessPremiumFeatures, loading: authLoading, user } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedPackage, setSelectedPackage] = useState(PACKAGES[1]);
+  const [selectedPackage, setSelectedPackage] = useState(PACKAGES[2]);
 
-  useEffect(() => {
-    if (!authLoading && canAccessPremiumFeatures) {
-      navigate('/dashboard');
-    }
-  }, [canAccessPremiumFeatures, authLoading, navigate]);
+  const premiumExpiresAt = user?.premium_expires_at ? new Date(user.premium_expires_at) : null;
 
   const features = [
     { icon: BookOpenCheck, text: 'Tüm seviyelerde sınırsız hikaye erişimi' },
@@ -76,8 +80,6 @@ const SubscriptionPage = () => {
     return <div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
-  if (canAccessPremiumFeatures) return null;
-
   return (
     <>
       <Seo
@@ -89,6 +91,19 @@ const SubscriptionPage = () => {
 
       <div className="relative min-h-screen bg-gray-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 overflow-hidden">
         <AnimatedBackground />
+
+        {canAccessPremiumFeatures && premiumExpiresAt && (
+          <div className="relative z-10 container mx-auto max-w-3xl px-4 pt-8">
+            <div className="flex items-start gap-3 rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-4 text-sm">
+              <CalendarCheck className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <p className="text-amber-800 dark:text-amber-200">
+                <span className="font-semibold">Premium üyeliğin aktif</span> —{' '}
+                {premiumExpiresAt.toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric' })} tarihine kadar geçerli.
+                Yeni bir paket satın alarak bu süreye ekleyebilirsin.
+              </p>
+            </div>
+          </div>
+        )}
 
         <motion.main
           variants={pageVariants}

@@ -99,23 +99,12 @@ const SubscriptionManagement = () => {
             </div>
           )}
 
-          <Button
-            className="w-full"
-            variant={isExpiringSoon ? "default" : "outline"}
-            onClick={() => navigate("/subscription")}
-          >
-            {isExpiringSoon ? (
-              <>
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Yeni Paket Al
-              </>
-            ) : (
-              <>
-                <ShoppingBag className="mr-2 h-4 w-4" />
-                Paket Süresini Uzat
-              </>
-            )}
-          </Button>
+          {isExpiringSoon && (
+            <Button className="w-full" onClick={() => navigate("/subscription")}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Yeni Paket Al
+            </Button>
+          )}
 
           {/* Payment logos */}
           <div
